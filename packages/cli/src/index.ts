@@ -13,6 +13,11 @@ import { injectCommand } from './commands/inject.js';
 import { connectCommand } from './commands/connect.js';
 import { doctorCommand } from './commands/doctor.js';
 import { hookCommand } from './commands/hook.js';
+import { decayCommand } from './commands/decay.js';
+import { deprecateCommand } from './commands/deprecate.js';
+import { editCommand } from './commands/edit.js';
+import { reflectCommand } from './commands/reflect.js';
+import { defragCommand } from './commands/defrag.js';
 
 const program = new Command();
 
@@ -38,8 +43,15 @@ program.addCommand(addCommand);
 program.addCommand(saveCommand);
 program.addCommand(removeCommand);
 
+// Manage (continued)
+program.addCommand(editCommand);
+program.addCommand(deprecateCommand);
+
 // Maintenance
 program.addCommand(syncCommand);
+program.addCommand(decayCommand);
+program.addCommand(reflectCommand);
+program.addCommand(defragCommand);
 
 // Hooks
 program.addCommand(hookCommand);

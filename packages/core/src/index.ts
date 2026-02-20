@@ -38,8 +38,18 @@ export { getContextForFile, type FileContext } from './injection/context-for-fil
 
 // Extraction
 export { detectPatterns, type PatternMatch } from './extraction/patterns.js';
-export { extractFromTranscript, type ExtractionResult } from './extraction/extractor.js';
+export {
+  extractFromTranscript,
+  extractFromTranscriptAsync,
+  type ExtractionResult,
+} from './extraction/extractor.js';
 export { deduplicatePatterns } from './extraction/dedup.js';
+export { deepExtract } from './extraction/deep-extract.js';
+
+// Intelligence
+export { applyDecay, boostRelevance, type DecayResult } from './intelligence/decay.js';
+export { reflectOnSessions, type ReflectResult } from './intelligence/reflect.js';
+export { defragMemories, type DefragResult } from './intelligence/defrag.js';
 
 // Sync
 export { syncMemoryToIndex, removeFromIndex, rebuildIndex } from './index/sync.js';

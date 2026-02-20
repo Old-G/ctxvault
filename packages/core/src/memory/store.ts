@@ -28,7 +28,7 @@ const TYPE_DIRS: Record<string, string> = {
 };
 
 export class MemoryStore {
-  constructor(private readonly ctxDir: string) {}
+  constructor(readonly ctxDir: string) {}
 
   create(input: CreateMemoryInput): MemoryEntry {
     const validated = CreateMemoryInputSchema.parse(input);

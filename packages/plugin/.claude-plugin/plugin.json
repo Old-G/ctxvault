@@ -1,0 +1,9 @@
+{
+  "name": "ctxvault",
+  "description": "Persistent project memory for AI coding agents. Automatically saves gotchas, decisions, solutions, and discoveries between sessions.",
+  "version": "1.0.0",
+  "author": {
+    "name": "ctxvault"
+  },
+  "homepage": "https://github.com/ctxvault/ctxvault"
+}

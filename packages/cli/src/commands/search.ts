@@ -11,7 +11,7 @@ export const searchCommand = new Command('search')
   .option('-l, --limit <n>', 'Maximum results', '10')
   .action((query: string, options: { type?: string; limit: string }) => {
     const ctxDir = join(process.cwd(), '.ctx');
-    const dbPath = join(ctxDir, 'index.db');
+    const dbPath = join(ctxDir, 'vault.db');
     const { sqlite } = createDatabase(dbPath);
 
     try {
