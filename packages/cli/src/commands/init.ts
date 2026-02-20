@@ -12,6 +12,7 @@ import {
 import chalk from 'chalk';
 import { detectAgents } from '../agents/detector.js';
 import { setupClaudeCode } from '../agents/claude-code.js';
+import { setupCursor } from '../agents/cursor.js';
 import { generateSkill } from '../skill/generator.js';
 
 const CTX_GITIGNORE = `vault.db
@@ -96,6 +97,18 @@ export const initCommand = new Command('init')
     if (shouldSetupClaude && options.hooks !== false) {
       const hookActions = setupClaudeCode(projectRoot);
       for (const action of hookActions) {
+        console.log(chalk.green(`  ✓ ${action}`));
+      }
+    }
+
+    // Cursor rules
+    const cursorAgent = agents.find((a) => a.name === 'cursor');
+    const shouldSetupCursor =
+      cursorAgent?.detected && (!options.agent || options.agent === 'cursor');
+
+    if (shouldSetupCursor) {
+      const cursorActions = setupCursor(projectRoot);
+      for (const action of cursorActions) {
         console.log(chalk.green(`  ✓ ${action}`));
       }
     }
