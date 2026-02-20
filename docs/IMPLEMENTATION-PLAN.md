@@ -78,13 +78,14 @@
 - [x] `packages/core/src/extraction/patterns.ts` — regex-паттерны для lightweight extract
 - [x] `packages/core/src/extraction/extractor.ts` — extractFromTranscript
 - [x] Тесты (5 тестов patterns)
-- [ ] Дедупликация через FTS5 similarity check
+- [x] Дедупликация через FTS5 similarity check (OR-query, threshold=1)
+- [x] Тесты dedup (3 теста) + extractor (3 теста)
 
 ### 1.6 Core: Git Operations ✅
 
 - [x] `packages/core/src/git/ops.ts` — git add, commit, status (simple-git)
 - [x] `packages/core/src/git/ignore.ts` — ensureGitignore (vault.db, sessions/)
-- [ ] Smart auto-commit с описательными сообщениями
+- [x] Smart auto-commit с описательными сообщениями (`auto-commit.ts`)
 
 ### 1.7 Core: Публичный API ✅
 
@@ -148,13 +149,14 @@
 
 ### 1.14 Тестирование ✅
 
-- [x] 23 теста: config (3), frontmatter (1), store (5), patterns (5), budget (3), sync (2), E2E (3), smoke (1)
+- [x] 32 теста: config (3), frontmatter (1), store (5), patterns (5), budget (3), sync (2), E2E (6), dedup (3), extractor (3), smoke (1)
 - [x] Build, typecheck, lint — всё зелёное
 - [x] Benchmarks: FTS5 ~0.11ms, PreToolUse ~0.05ms, SessionStart ~2.4ms
+- [x] E2E тест: full add → search → show workflow
+- [x] E2E тест: PreToolUse contextual gotchas for related files
+- [x] E2E тест: extraction with deduplication against existing index
+- [x] Coverage ≥ 70% (core: 77% stmts, 80% lines, 73% funcs)
 - [ ] Test fixtures: hook input JSONs
-- [ ] E2E тест: `ctx init` → `ctx add` → `ctx search` → найти
-- [ ] E2E тест: PreToolUse hook со stdin JSON
-- [ ] Coverage ≥ 70%
 
 ### 1.15 Публикация MVP
 
@@ -178,7 +180,7 @@
 - [ ] Import history из Claude Code / Codex
 - [ ] `ctx deprecate <path>`
 - [ ] `ctx edit <path>` (открыть в $EDITOR)
-- [ ] FTS5 дедупликация в extraction
+- [x] ~~FTS5 дедупликация в extraction~~ (перенесено в Phase 1)
 
 ### 2.2 Claude Code Plugin
 
@@ -222,8 +224,8 @@
 - [x] FTS5 search работает с BM25 ranking
 - [x] PreToolUse < 10ms (~0.05ms), SessionStart < 200ms (~2.4ms)
 - [x] Auto-extract (lightweight) работает
-- [x] 23 теста проходят
-- [ ] Coverage ≥ 70%
+- [x] 32 теста проходят
+- [x] Coverage ≥ 70% (core: 77% stmts, 80% lines)
 - [ ] CI зелёный на всех платформах
 - [ ] README с GIF-демо
 - [ ] Dogfooding (1 неделя)
