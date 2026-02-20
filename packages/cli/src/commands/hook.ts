@@ -7,8 +7,12 @@ import {
   buildSessionPayload,
   getContextForFile,
   extractFromTranscript,
+  extractFromTranscriptAsync,
   syncMemoryToIndex,
   MemoryStore,
+  discoverClaudeCodeTranscripts,
+  parseClaudeCodeTranscript,
+  buildTranscriptText,
 } from '@ctxvault/core';
 
 function readStdin(): Promise<string> {
@@ -36,12 +40,10 @@ function extractFilePathFromStdin(raw: string): string | null {
     if (toolInput && typeof toolInput.file_path === 'string') {
       return toolInput.file_path;
     }
-    // Fallback: check top-level file_path
     if (typeof parsed.file_path === 'string') {
       return parsed.file_path;
     }
   } catch {
-    // Not JSON, treat as raw file path
     return raw.trim() || null;
   }
   return null;
@@ -160,10 +162,8 @@ hookCommand
 hookCommand
   .command('auto-extract')
   .description('Auto-extract memories from session transcript')
-  .option('--transcript <text>', 'Session transcript text')
-  .action((options: { transcript?: string }) => {
-    if (!options.transcript) return;
-
+  .option('--transcript <text>', 'Session transcript text (optional — auto-reads latest session)')
+  .action(async (options: { transcript?: string }) => {
     const projectRoot = process.cwd();
     const ctxDir = join(projectRoot, '.ctx');
     const config = loadConfig(projectRoot);
@@ -173,7 +173,31 @@ hookCommand
     const { sqlite } = createDatabase(dbPath);
 
     try {
-      const result = extractFromTranscript(options.transcript, config, { db: sqlite });
+      let transcript = options.transcript;
+
+      // Auto-discover latest Claude Code session transcript
+      if (!transcript) {
+        const transcripts = discoverClaudeCodeTranscripts(projectRoot);
+        if (transcripts.length > 0) {
+          const latest = transcripts[transcripts.length - 1];
+          const session = parseClaudeCodeTranscript(latest);
+          if (session && session.messages.length >= config.extract.min_session_messages) {
+            transcript = buildTranscriptText(session);
+          }
+        }
+      }
+
+      if (!transcript) return;
+
+      // Use deep extract (Haiku) if ANTHROPIC_API_KEY is set, otherwise lightweight regex
+      const hasApiKey = Boolean(process.env.ANTHROPIC_API_KEY);
+      let result;
+
+      if (hasApiKey) {
+        result = await extractFromTranscriptAsync(transcript, config, { db: sqlite });
+      } else {
+        result = extractFromTranscript(transcript, config, { db: sqlite });
+      }
 
       if (result.memories.length === 0) return;
 
@@ -182,10 +206,11 @@ hookCommand
         syncMemoryToIndex(sqlite, entry);
       }
 
+      const mode = hasApiKey ? 'deep' : 'lightweight';
       const msg =
         result.deduplicated > 0
-          ? `ctx: extracted ${String(result.memories.length)} memories (${String(result.deduplicated)} duplicates skipped)\n`
-          : `ctx: extracted ${String(result.memories.length)} memories\n`;
+          ? `ctx: extracted ${String(result.memories.length)} memories [${mode}] (${String(result.deduplicated)} duplicates skipped)\n`
+          : `ctx: extracted ${String(result.memories.length)} memories [${mode}]\n`;
       process.stderr.write(msg);
     } finally {
       sqlite.close();

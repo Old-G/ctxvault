@@ -3,41 +3,51 @@ import { join } from 'node:path';
 
 const CURSOR_RULE = `# CtxVault — Persistent Project Memory
 
-This project uses CtxVault for persistent memory across sessions.
-Memory is stored as Markdown files in \`.ctx/\` and tracked by git.
+**MANDATORY: You MUST actively use this system in every session. Save memories proactively, not only when asked.**
 
-## At Session Start
+## 1. Session Start — ALWAYS run this first
 
-Read the project context:
 \`\`\`bash
 bash .agents/skills/ctxvault/scripts/inject.sh
 \`\`\`
 
-## When to Save Memory
+## 2. During Work — Save memories as you go
 
-Save a memory when you encounter something important:
+Every time you encounter one of these, IMMEDIATELY save it:
 
-- **gotcha** — surprising or counterintuitive behavior
-- **decision** — architecture or technology choice
-- **solution** — problem diagnosed and solved
-- **discovery** — new knowledge about the codebase
-- **convention** — coding standard or project pattern
+| Trigger | Type | Example |
+|---------|------|---------|
+| Bug found, unexpected behavior | gotcha | "SQLite WAL requires shared-memory" |
+| Technology/architecture choice | decision | "Chose FTS5 over Elasticsearch" |
+| Problem diagnosed and fixed | solution | "Fixed CORS by adding origin whitelist" |
+| Learned something about codebase | discovery | "Config supports hot-reload" |
+| Agreed on coding pattern | convention | "All API responses use camelCase" |
 
 \`\`\`bash
 bash .agents/skills/ctxvault/scripts/save.sh <type> "<summary>" "<description>"
 \`\`\`
 
-## When to Search Memory
+Write summary and description in the **same language the user speaks**.
 
-Before making changes or when you need context:
+## 3. Search Before Making Changes
+
 \`\`\`bash
 bash .agents/skills/ctxvault/scripts/search.sh "<query>"
 \`\`\`
 
-## Read a Specific Memory
+## 4. Read Full Memory
+
 \`\`\`bash
-bash .agents/skills/ctxvault/scripts/read.sh ".ctx/gotchas/example.md"
+bash .agents/skills/ctxvault/scripts/read.sh "<path>"
 \`\`\`
+
+## Rules
+
+- **Save at least 1 memory per session** — if nothing notable happened, save a discovery
+- **Write in the user's language** — not English unless the user speaks English
+- **Be specific** — "React useEffect runs twice in StrictMode" not "useEffect issue"
+- **Focus on WHY** — explain root cause, reasoning, context
+- Memory is stored as Markdown in \`.ctx/\` — tracked by git, reviewable in PRs
 `;
 
 export function setupCursor(projectRoot: string): string[] {
@@ -49,7 +59,7 @@ export function setupCursor(projectRoot: string): string[] {
 
   // Write .mdc rule file (Cursor rules format)
   const mdcContent = `---
-description: Persistent project memory — save gotchas, decisions, solutions
+description: "MANDATORY: Persistent project memory. You MUST use this in every session. Save memories proactively in the user's language."
 globs:
 alwaysApply: true
 ---
