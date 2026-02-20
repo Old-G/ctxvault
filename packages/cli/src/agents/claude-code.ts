@@ -42,6 +42,14 @@ function resolveCtxCommand(): string {
   }
 }
 
+/**
+ * Wraps a command so it sources .ctx/.env first (for ANTHROPIC_API_KEY etc.)
+ * The env file is gitignored and contains API keys set during `ctx init`.
+ */
+function withEnv(command: string): string {
+  return `test -f .ctx/.env && export $(cat .ctx/.env | grep -v '^#' | xargs) 2>/dev/null; ${command}`;
+}
+
 function buildHooks(ctx: string): Record<string, ClaudeHookGroup[]> {
   return {
     SessionStart: [
@@ -49,7 +57,7 @@ function buildHooks(ctx: string): Record<string, ClaudeHookGroup[]> {
         hooks: [
           {
             type: 'command',
-            command: `${ctx} hook session-start`,
+            command: withEnv(`${ctx} hook session-start`),
           },
         ],
       },
@@ -91,7 +99,7 @@ function buildHooks(ctx: string): Record<string, ClaudeHookGroup[]> {
         hooks: [
           {
             type: 'command',
-            command: `${ctx} hook auto-extract`,
+            command: withEnv(`${ctx} hook auto-extract`),
           },
         ],
       },

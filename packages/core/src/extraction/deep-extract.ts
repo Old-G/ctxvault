@@ -131,10 +131,10 @@ async function extractViaOpenAICompatible(
       messages: [{ role: 'user', content: PROMPT + transcript.slice(0, 12000) }],
     });
 
-    const text = response.choices[0].message.content;
-    if (!text) return [];
+    const choice = response.choices[0];
+    if (!choice) return [];
 
-    return parseResponse(text);
+    return parseResponse(choice.message.content);
   } catch {
     // Fallback: raw fetch to OpenAI-compatible endpoint
     const response = await fetch(`${baseUrl}/chat/completions`, {
