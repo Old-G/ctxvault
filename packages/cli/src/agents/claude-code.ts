@@ -1,5 +1,6 @@
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, resolve, dirname } from 'node:path';
+import { execSync } from 'node:child_process';
 
 interface ClaudeHookEntry {
   type: string;
@@ -16,14 +17,39 @@ interface ClaudeSettings {
   [key: string]: unknown;
 }
 
-function buildHooks(): Record<string, ClaudeHookGroup[]> {
+/**
+ * Resolves the `ctx` command to use in hooks.
+ * Priority: 1) global `ctx` in PATH, 2) absolute `node <path-to-ctx.js>`
+ */
+function resolveCtxCommand(): string {
+  // Check if ctx is globally available
+  try {
+    execSync('command -v ctx', { stdio: 'pipe' });
+    return 'ctx';
+  } catch {
+    // Not in PATH — use absolute path to current binary
+    const ctxBin = resolve(dirname(new URL(import.meta.url).pathname), '../../bin/ctx.js');
+    if (existsSync(ctxBin)) {
+      return `node ${ctxBin}`;
+    }
+    // Fallback: try to find via process.argv
+    const argv1 = process.argv[1];
+    if (argv1?.endsWith('ctx.js')) {
+      return `node ${resolve(argv1)}`;
+    }
+    // Last resort — hope it's in PATH at runtime
+    return 'ctx';
+  }
+}
+
+function buildHooks(ctx: string): Record<string, ClaudeHookGroup[]> {
   return {
     SessionStart: [
       {
         hooks: [
           {
             type: 'command',
-            command: 'ctx hook session-start',
+            command: `${ctx} hook session-start`,
           },
         ],
       },
@@ -34,7 +60,7 @@ function buildHooks(): Record<string, ClaudeHookGroup[]> {
         hooks: [
           {
             type: 'command',
-            command: 'ctx hook context-for-file',
+            command: `${ctx} hook context-for-file`,
           },
         ],
       },
@@ -45,7 +71,7 @@ function buildHooks(): Record<string, ClaudeHookGroup[]> {
         hooks: [
           {
             type: 'command',
-            command: 'ctx hook track-change',
+            command: `${ctx} hook track-change`,
           },
         ],
       },
@@ -55,7 +81,7 @@ function buildHooks(): Record<string, ClaudeHookGroup[]> {
         hooks: [
           {
             type: 'command',
-            command: 'ctx hook snapshot',
+            command: `${ctx} hook snapshot`,
           },
         ],
       },
@@ -65,7 +91,7 @@ function buildHooks(): Record<string, ClaudeHookGroup[]> {
         hooks: [
           {
             type: 'command',
-            command: 'ctx hook auto-extract',
+            command: `${ctx} hook auto-extract`,
           },
         ],
       },
@@ -89,9 +115,14 @@ export function setupClaudeCode(projectRoot: string): string[] {
     actions.push('Created .claude/settings.json');
   }
 
-  settings.hooks = { ...settings.hooks, ...buildHooks() };
+  const ctx = resolveCtxCommand();
+  settings.hooks = { ...settings.hooks, ...buildHooks(ctx) };
 
   writeFileSync(settingsPath, JSON.stringify(settings, null, 2) + '\n', 'utf-8');
+
+  if (ctx !== 'ctx') {
+    actions.push(`Hooks use absolute path: ${ctx}`);
+  }
 
   return actions;
 }
