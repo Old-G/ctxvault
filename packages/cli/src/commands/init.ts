@@ -1,12 +1,18 @@
 import { Command } from 'commander';
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { DEFAULT_CONFIG_YAML, createDatabase, ensureGitignore } from '@ctxvault/core';
+import {
+  DEFAULT_CONFIG_YAML,
+  createDatabase,
+  ensureGitignore,
+  scanProject,
+  generateArchitectureMd,
+  generateConventionsMd,
+} from '@ctxvault/core';
 import chalk from 'chalk';
 import { detectAgents } from '../agents/detector.js';
 import { setupClaudeCode } from '../agents/claude-code.js';
 import { generateSkill } from '../skill/generator.js';
-import { ARCHITECTURE_MD, CONVENTIONS_MD, renderTemplate } from '../templates/system.js';
 
 const CTX_GITIGNORE = `vault.db
 vault.db-wal
@@ -45,16 +51,25 @@ export const initCommand = new Command('init')
     writeFileSync(join(ctxDir, '.gitignore'), CTX_GITIGNORE, 'utf-8');
     console.log(chalk.green('  ✓ .ctx/.gitignore created'));
 
-    // 4. Write system templates (if not exists)
+    // 4. Auto-analyze project and generate system templates
     const archPath = join(ctxDir, 'system', 'architecture.md');
     const convPath = join(ctxDir, 'system', 'conventions.md');
-    if (!existsSync(archPath)) {
-      writeFileSync(archPath, renderTemplate(ARCHITECTURE_MD), 'utf-8');
+
+    if (!existsSync(archPath) || !existsSync(convPath)) {
+      const projectInfo = scanProject(projectRoot);
+
+      if (!existsSync(archPath)) {
+        writeFileSync(archPath, generateArchitectureMd(projectInfo), 'utf-8');
+      }
+      if (!existsSync(convPath)) {
+        writeFileSync(convPath, generateConventionsMd(projectInfo), 'utf-8');
+      }
+      console.log(
+        chalk.green('  ✓ Project analyzed — architecture.md & conventions.md auto-generated'),
+      );
+    } else {
+      console.log(chalk.green('  ✓ System templates preserved'));
     }
-    if (!existsSync(convPath)) {
-      writeFileSync(convPath, renderTemplate(CONVENTIONS_MD), 'utf-8');
-    }
-    console.log(chalk.green('  ✓ System templates created'));
 
     // 5. Initialize SQLite index
     const dbPath = join(ctxDir, 'vault.db');
@@ -97,8 +112,5 @@ export const initCommand = new Command('init')
     console.log(`  Config:     ${chalk.dim(configPath)}`);
     console.log(`  Skill:      ${chalk.dim('.agents/skills/ctxvault/')}`);
     console.log('');
-    console.log(chalk.dim('Next steps:'));
-    console.log(chalk.dim('  1. Edit .ctx/system/architecture.md with your project info'));
-    console.log(chalk.dim('  2. Edit .ctx/system/conventions.md with your conventions'));
-    console.log(chalk.dim('  3. Start coding — memories will accumulate automatically'));
+    console.log(chalk.dim('Start coding — your AI agent now has persistent memory.'));
   });

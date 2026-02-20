@@ -60,6 +60,13 @@ export {
   type TranscriptSession,
 } from './import/transcript-parser.js';
 
+// Project Analysis
+export {
+  scanProject,
+  generateArchitectureMd,
+  generateConventionsMd,
+} from './analyze/project-scanner.js';
+
 // Sync
 export { syncMemoryToIndex, removeFromIndex, rebuildIndex } from './index/sync.js';
 
