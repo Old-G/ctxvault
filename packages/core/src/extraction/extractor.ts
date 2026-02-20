@@ -54,7 +54,7 @@ export async function extractFromTranscriptAsync(
 
   if (config.extract.mode === 'deep') {
     const { deepExtract } = await import('./deep-extract.js');
-    const deepPatterns = await deepExtract(transcript);
+    const deepPatterns = await deepExtract(transcript, config);
     const lightPatterns = detectPatterns(transcript);
     // Merge, preferring deep patterns (higher confidence)
     const seenSummaries = new Set(deepPatterns.map((p) => p.summary.toLowerCase()));

@@ -21,6 +21,10 @@ const extractSchema = z.object({
   enabled: z.boolean().default(true),
   mode: z.enum(['lightweight', 'deep']).default('lightweight'),
   min_session_messages: z.number().default(5),
+  provider: z.enum(['anthropic', 'openai-compatible']).default('anthropic'),
+  model: z.string().default('claude-haiku-4-5-20251001'),
+  base_url: z.string().optional(),
+  api_key_env: z.string().default('ANTHROPIC_API_KEY'),
 });
 
 const decaySchema = z.object({

@@ -1,5 +1,6 @@
 import { createRequire } from 'node:module';
 import type { PatternMatch } from './patterns.js';
+import type { Config } from '../config/schema.js';
 
 interface AnthropicClient {
   messages: {
@@ -10,6 +11,20 @@ interface AnthropicClient {
     }) => Promise<{
       content: { type: string; text?: string }[];
     }>;
+  };
+}
+
+interface OpenAIClient {
+  chat: {
+    completions: {
+      create: (params: {
+        model: string;
+        max_tokens: number;
+        messages: { role: string; content: string }[];
+      }) => Promise<{
+        choices: { message: { content: string } }[];
+      }>;
+    };
   };
 }
 
@@ -43,52 +58,145 @@ Rules:
 Transcript:
 `;
 
-/**
- * Deep extraction using LLM (Anthropic Haiku).
- * Requires ANTHROPIC_API_KEY environment variable and @anthropic-ai/sdk installed.
- *
- * Falls back to empty array if API key is not set or SDK is not available.
- */
-export async function deepExtract(transcript: string): Promise<PatternMatch[]> {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) return [];
+function resolveApiKey(config: Config): string | undefined {
+  const envVar = config.extract.api_key_env;
+  return process.env[envVar];
+}
 
-  let client: AnthropicClient;
+function parseResponse(text: string): PatternMatch[] {
+  const jsonStr = text.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '');
+  const parsed = JSON.parse(jsonStr) as PatternMatch[];
 
-  try {
-    // Use createRequire to avoid TypeScript static analysis of the module name
-    const require = createRequire(import.meta.url);
-    const sdk = require('@anthropic-ai/sdk') as {
-      default?: new (opts: { apiKey: string }) => AnthropicClient;
-    } & (new (opts: { apiKey: string }) => AnthropicClient);
-    const Ctor = sdk.default ?? sdk;
-    client = new Ctor({ apiKey });
-  } catch {
-    return [];
+  return parsed.filter(
+    (p) =>
+      typeof p.type === 'string' &&
+      typeof p.summary === 'string' &&
+      typeof p.content === 'string' &&
+      Array.isArray(p.tags) &&
+      typeof p.confidence === 'number' &&
+      p.confidence >= 0.5,
+  );
+}
+
+async function extractViaAnthropic(
+  transcript: string,
+  config: Config,
+  apiKey: string,
+): Promise<PatternMatch[]> {
+  const require = createRequire(import.meta.url);
+  const sdk = require('@anthropic-ai/sdk') as {
+    default?: new (opts: { apiKey: string; baseURL?: string }) => AnthropicClient;
+  } & (new (opts: { apiKey: string; baseURL?: string }) => AnthropicClient);
+  const Ctor = sdk.default ?? sdk;
+
+  const opts: { apiKey: string; baseURL?: string } = { apiKey };
+  if (config.extract.base_url) {
+    opts.baseURL = config.extract.base_url;
   }
 
+  const client = new Ctor(opts);
+  const response = await client.messages.create({
+    model: config.extract.model,
+    max_tokens: 4000,
+    messages: [{ role: 'user', content: PROMPT + transcript.slice(0, 12000) }],
+  });
+
+  const text = response.content.find((c) => c.type === 'text')?.text;
+  if (!text) return [];
+
+  return parseResponse(text);
+}
+
+async function extractViaOpenAICompatible(
+  transcript: string,
+  config: Config,
+  apiKey: string,
+): Promise<PatternMatch[]> {
+  const baseUrl = config.extract.base_url;
+  if (!baseUrl) return [];
+
+  const require = createRequire(import.meta.url);
+
   try {
-    const response = await client.messages.create({
-      model: 'claude-haiku-4-5-20251001',
+    // Try using openai SDK if available
+    const sdk = require('openai') as {
+      default?: new (opts: { apiKey: string; baseURL: string }) => OpenAIClient;
+    } & (new (opts: { apiKey: string; baseURL: string }) => OpenAIClient);
+    const Ctor = sdk.default ?? sdk;
+
+    const client = new Ctor({ apiKey, baseURL: baseUrl });
+    const response = await client.chat.completions.create({
+      model: config.extract.model,
       max_tokens: 4000,
       messages: [{ role: 'user', content: PROMPT + transcript.slice(0, 12000) }],
     });
 
-    const text = response.content.find((c) => c.type === 'text')?.text;
+    const text = response.choices[0].message.content;
     if (!text) return [];
 
-    const jsonStr = text.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '');
-    const parsed = JSON.parse(jsonStr) as PatternMatch[];
+    return parseResponse(text);
+  } catch {
+    // Fallback: raw fetch to OpenAI-compatible endpoint
+    const response = await fetch(`${baseUrl}/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: config.extract.model,
+        max_tokens: 4000,
+        messages: [{ role: 'user', content: PROMPT + transcript.slice(0, 12000) }],
+      }),
+    });
 
-    return parsed.filter(
-      (p) =>
-        typeof p.type === 'string' &&
-        typeof p.summary === 'string' &&
-        typeof p.content === 'string' &&
-        Array.isArray(p.tags) &&
-        typeof p.confidence === 'number' &&
-        p.confidence >= 0.5,
-    );
+    if (!response.ok) return [];
+
+    const data = (await response.json()) as {
+      choices?: { message?: { content?: string } }[];
+    };
+    const text = data.choices?.[0]?.message?.content;
+    if (!text) return [];
+
+    return parseResponse(text);
+  }
+}
+
+/**
+ * Deep extraction using LLM.
+ *
+ * Supports two providers:
+ * - `anthropic` (default): Uses @anthropic-ai/sdk. Supports custom base_url for Claude Max/Pro.
+ * - `openai-compatible`: Any OpenAI-compatible API (OpenRouter, Together, etc.)
+ *
+ * Configure in .ctx/config.yaml:
+ * ```yaml
+ * extract:
+ *   mode: deep
+ *   provider: anthropic          # or openai-compatible
+ *   model: claude-haiku-4-5-20251001
+ *   base_url: https://api.anthropic.com  # optional
+ *   api_key_env: ANTHROPIC_API_KEY       # env var name
+ * ```
+ */
+export async function deepExtract(transcript: string, config?: Config): Promise<PatternMatch[]> {
+  // Legacy: if no config, use env var directly (backward compat)
+  const apiKey = config ? resolveApiKey(config) : process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) return [];
+
+  if (!config) {
+    // Backward compat: no config → use Anthropic defaults
+    const { DEFAULT_CONFIG } = await import('../config/defaults.js');
+    config = DEFAULT_CONFIG;
+  }
+
+  const provider = config.extract.provider;
+
+  try {
+    if (provider === 'openai-compatible') {
+      return await extractViaOpenAICompatible(transcript, config, apiKey);
+    }
+    return await extractViaAnthropic(transcript, config, apiKey);
   } catch {
     return [];
   }

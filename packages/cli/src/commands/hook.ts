@@ -189,8 +189,9 @@ hookCommand
 
       if (!transcript) return;
 
-      // Use deep extract (Haiku) if ANTHROPIC_API_KEY is set, otherwise lightweight regex
-      const hasApiKey = Boolean(process.env.ANTHROPIC_API_KEY);
+      // Use deep extract if API key is available (respects config.extract.api_key_env)
+      const apiKeyEnv = config.extract.api_key_env;
+      const hasApiKey = Boolean(process.env[apiKeyEnv]);
       let result;
 
       if (hasApiKey) {
@@ -206,7 +207,8 @@ hookCommand
         syncMemoryToIndex(sqlite, entry);
       }
 
-      const mode = hasApiKey ? 'deep' : 'lightweight';
+      const provider = config.extract.provider;
+      const mode = hasApiKey ? `deep/${provider}` : 'lightweight';
       const msg =
         result.deduplicated > 0
           ? `ctx: extracted ${String(result.memories.length)} memories [${mode}] (${String(result.deduplicated)} duplicates skipped)\n`

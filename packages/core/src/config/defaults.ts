@@ -19,6 +19,10 @@ export const DEFAULT_CONFIG: Config = {
     enabled: true,
     mode: 'lightweight',
     min_session_messages: 5,
+    provider: 'anthropic',
+    model: 'claude-haiku-4-5-20251001',
+    base_url: undefined,
+    api_key_env: 'ANTHROPIC_API_KEY',
   },
   decay: {
     enabled: true,
@@ -50,7 +54,11 @@ contextual:
 
 extract:
   enabled: true
-  mode: lightweight
+  mode: lightweight    # lightweight (regex) or deep (LLM)
+  # provider: anthropic    # anthropic | openai-compatible
+  # model: claude-haiku-4-5-20251001
+  # base_url: https://api.anthropic.com  # custom endpoint (Claude Max, proxy, etc.)
+  # api_key_env: ANTHROPIC_API_KEY       # env var name for API key
 
 decay:
   enabled: true
