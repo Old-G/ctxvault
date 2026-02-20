@@ -40,6 +40,9 @@ export { getContextForFile, type FileContext } from './injection/context-for-fil
 export { detectPatterns, type PatternMatch } from './extraction/patterns.js';
 export { extractFromTranscript, type ExtractionResult } from './extraction/extractor.js';
 
+// Sync
+export { syncMemoryToIndex, removeFromIndex, rebuildIndex } from './index/sync.js';
+
 // Git
 export { createGit, autoCommitMemories, isGitRepo, getChangedFiles } from './git/ops.js';
 export { ensureGitignore } from './git/ignore.js';

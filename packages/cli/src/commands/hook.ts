@@ -5,6 +5,8 @@ import {
   createDatabase,
   buildSessionPayload,
   getContextForFile,
+  extractFromTranscript,
+  syncMemoryToIndex,
   MemoryStore,
 } from '@ctxvault/core';
 
@@ -24,7 +26,6 @@ hookCommand
     const payload = buildSessionPayload(store, config);
 
     if (payload.markdown) {
-      // Output raw markdown for agent consumption
       process.stdout.write(payload.markdown);
     }
   });
@@ -45,6 +46,62 @@ hookCommand
       if (context.markdown) {
         process.stdout.write(context.markdown);
       }
+    } finally {
+      sqlite.close();
+    }
+  });
+
+hookCommand
+  .command('post-tool-use')
+  .description('Track file changes after tool use')
+  .argument('<file-path>', 'File that was modified')
+  .action((filePath: string) => {
+    // For now, just log that the file was touched.
+    // In the future this will track changes for session analysis.
+    const projectRoot = process.cwd();
+    const ctxDir = join(projectRoot, '.ctx');
+    const dbPath = join(ctxDir, 'index.db');
+
+    // Ensure the DB exists, but don't fail silently if .ctx not initialized
+    try {
+      const { sqlite } = createDatabase(dbPath);
+      // Record the file access timestamp
+      sqlite
+        .prepare(
+          'UPDATE memories SET access_count = access_count + 1, last_accessed = ? WHERE file_path = ?',
+        )
+        .run(new Date().toISOString(), filePath);
+      sqlite.close();
+    } catch {
+      // Not initialized yet, silently ignore
+    }
+  });
+
+hookCommand
+  .command('stop')
+  .description('Auto-extract memories from session transcript')
+  .option('--transcript <text>', 'Session transcript text')
+  .action((options: { transcript?: string }) => {
+    if (!options.transcript) return;
+
+    const projectRoot = process.cwd();
+    const ctxDir = join(projectRoot, '.ctx');
+    const config = loadConfig(projectRoot);
+
+    const result = extractFromTranscript(options.transcript, config);
+
+    if (result.memories.length === 0) return;
+
+    const store = new MemoryStore(ctxDir);
+    const dbPath = join(ctxDir, 'index.db');
+    const { sqlite } = createDatabase(dbPath);
+
+    try {
+      for (const memory of result.memories) {
+        const entry = store.create(memory);
+        syncMemoryToIndex(sqlite, entry);
+      }
+      process.stderr.write(`ctx: extracted ${String(result.memories.length)} memories\n`);
     } finally {
       sqlite.close();
     }
