@@ -168,20 +168,25 @@ hookCommand
     const ctxDir = join(projectRoot, '.ctx');
     const config = loadConfig(projectRoot);
 
-    const result = extractFromTranscript(options.transcript, config);
-
-    if (result.memories.length === 0) return;
-
     const store = new MemoryStore(ctxDir);
     const dbPath = join(ctxDir, 'vault.db');
     const { sqlite } = createDatabase(dbPath);
 
     try {
+      const result = extractFromTranscript(options.transcript, config, { db: sqlite });
+
+      if (result.memories.length === 0) return;
+
       for (const memory of result.memories) {
         const entry = store.create(memory);
         syncMemoryToIndex(sqlite, entry);
       }
-      process.stderr.write(`ctx: extracted ${String(result.memories.length)} memories\n`);
+
+      const msg =
+        result.deduplicated > 0
+          ? `ctx: extracted ${String(result.memories.length)} memories (${String(result.deduplicated)} duplicates skipped)\n`
+          : `ctx: extracted ${String(result.memories.length)} memories\n`;
+      process.stderr.write(msg);
     } finally {
       sqlite.close();
     }

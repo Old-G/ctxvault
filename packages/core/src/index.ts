@@ -39,10 +39,12 @@ export { getContextForFile, type FileContext } from './injection/context-for-fil
 // Extraction
 export { detectPatterns, type PatternMatch } from './extraction/patterns.js';
 export { extractFromTranscript, type ExtractionResult } from './extraction/extractor.js';
+export { deduplicatePatterns } from './extraction/dedup.js';
 
 // Sync
 export { syncMemoryToIndex, removeFromIndex, rebuildIndex } from './index/sync.js';
 
 // Git
 export { createGit, autoCommitMemories, isGitRepo, getChangedFiles } from './git/ops.js';
+export { smartAutoCommit } from './git/auto-commit.js';
 export { ensureGitignore } from './git/ignore.js';
