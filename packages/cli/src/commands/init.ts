@@ -8,6 +8,12 @@ import { setupClaudeCode } from '../agents/claude-code.js';
 import { generateSkill } from '../skill/generator.js';
 import { ARCHITECTURE_MD, CONVENTIONS_MD, renderTemplate } from '../templates/system.js';
 
+const CTX_GITIGNORE = `vault.db
+vault.db-wal
+vault.db-shm
+sessions/
+`;
+
 export const initCommand = new Command('init')
   .description('Initialize CtxVault in the current project')
   .option('-f, --force', 'Overwrite existing configuration')
@@ -25,7 +31,7 @@ export const initCommand = new Command('init')
     }
 
     // 1. Create .ctx directory structure
-    const dirs = ['gotchas', 'decisions', 'solutions', 'discoveries', 'system'];
+    const dirs = ['gotchas', 'decisions', 'solutions', 'discoveries', 'system', 'sessions'];
     mkdirSync(ctxDir, { recursive: true });
     for (const dir of dirs) {
       mkdirSync(join(ctxDir, dir), { recursive: true });
@@ -35,7 +41,11 @@ export const initCommand = new Command('init')
     writeFileSync(configPath, DEFAULT_CONFIG_YAML, 'utf-8');
     console.log(chalk.green('  ✓ Config created'));
 
-    // 3. Write system templates (if not exists)
+    // 3. Write .ctx/.gitignore
+    writeFileSync(join(ctxDir, '.gitignore'), CTX_GITIGNORE, 'utf-8');
+    console.log(chalk.green('  ✓ .ctx/.gitignore created'));
+
+    // 4. Write system templates (if not exists)
     const archPath = join(ctxDir, 'system', 'architecture.md');
     const convPath = join(ctxDir, 'system', 'conventions.md');
     if (!existsSync(archPath)) {
@@ -46,17 +56,17 @@ export const initCommand = new Command('init')
     }
     console.log(chalk.green('  ✓ System templates created'));
 
-    // 4. Initialize SQLite index
-    const dbPath = join(ctxDir, 'index.db');
+    // 5. Initialize SQLite index
+    const dbPath = join(ctxDir, 'vault.db');
     const { sqlite } = createDatabase(dbPath);
     sqlite.close();
     console.log(chalk.green('  ✓ SQLite index initialized'));
 
-    // 5. Ensure .gitignore entries
+    // 6. Ensure root .gitignore entries
     ensureGitignore(projectRoot);
     console.log(chalk.green('  ✓ .gitignore updated'));
 
-    // 6. Agent detection & setup
+    // 7. Agent detection & setup
     const agents = detectAgents(projectRoot);
     const detected = agents.filter((a) => a.detected);
 
@@ -68,24 +78,24 @@ export const initCommand = new Command('init')
     const shouldSetupClaude =
       claudeAgent?.detected && (!options.agent || options.agent === 'claude-code');
 
-    if (shouldSetupClaude) {
-      if (options.hooks !== false) {
-        const hookActions = setupClaudeCode(projectRoot);
-        for (const action of hookActions) {
-          console.log(chalk.green(`  ✓ ${action}`));
-        }
+    if (shouldSetupClaude && options.hooks !== false) {
+      const hookActions = setupClaudeCode(projectRoot);
+      for (const action of hookActions) {
+        console.log(chalk.green(`  ✓ ${action}`));
       }
+    }
 
-      if (options.skill !== false) {
-        const skillFiles = generateSkill(projectRoot);
-        console.log(chalk.green(`  ✓ Skill generated (${String(skillFiles.length)} file)`));
-      }
+    // 8. Generate Agent Skill
+    if (options.skill !== false) {
+      const skillFiles = generateSkill(projectRoot);
+      console.log(chalk.green(`  ✓ Agent Skill generated (${String(skillFiles.length)} files)`));
     }
 
     console.log('');
     console.log(chalk.green.bold('CtxVault initialized successfully!'));
     console.log(`  Memory dir: ${chalk.dim(ctxDir)}`);
     console.log(`  Config:     ${chalk.dim(configPath)}`);
+    console.log(`  Skill:      ${chalk.dim('.agents/skills/ctxvault/')}`);
     console.log('');
     console.log(chalk.dim('Next steps:'));
     console.log(chalk.dim('  1. Edit .ctx/system/architecture.md with your project info'));

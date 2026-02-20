@@ -1,45 +1,73 @@
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 
-interface ClaudeHookConfig {
+interface ClaudeHookEntry {
   type: string;
-  matcher: string;
   command: string;
 }
 
+interface ClaudeHookGroup {
+  matcher?: string;
+  hooks: ClaudeHookEntry[];
+}
+
 interface ClaudeSettings {
-  hooks?: Record<string, ClaudeHookConfig[]>;
+  hooks?: Record<string, ClaudeHookGroup[]>;
   [key: string]: unknown;
 }
 
-function buildHooks(): Record<string, ClaudeHookConfig[]> {
+function buildHooks(): Record<string, ClaudeHookGroup[]> {
   return {
     SessionStart: [
       {
-        type: 'command',
-        matcher: '',
-        command: 'ctx hook session-start',
+        hooks: [
+          {
+            type: 'command',
+            command: 'ctx hook session-start',
+          },
+        ],
       },
     ],
     PreToolUse: [
       {
-        type: 'command',
-        matcher: 'edit_file|create_file|read_file',
-        command: 'ctx hook pre-tool-use "$FILE_PATH"',
+        matcher: 'Edit|MultiEdit|Write',
+        hooks: [
+          {
+            type: 'command',
+            command: 'ctx hook context-for-file',
+          },
+        ],
       },
     ],
     PostToolUse: [
       {
-        type: 'command',
-        matcher: 'edit_file|create_file',
-        command: 'ctx hook post-tool-use "$FILE_PATH"',
+        matcher: 'Edit|MultiEdit|Write',
+        hooks: [
+          {
+            type: 'command',
+            command: 'ctx hook track-change',
+          },
+        ],
+      },
+    ],
+    PreCompact: [
+      {
+        hooks: [
+          {
+            type: 'command',
+            command: 'ctx hook snapshot',
+          },
+        ],
       },
     ],
     Stop: [
       {
-        type: 'command',
-        matcher: '',
-        command: 'ctx hook stop',
+        hooks: [
+          {
+            type: 'command',
+            command: 'ctx hook auto-extract',
+          },
+        ],
       },
     ],
   };

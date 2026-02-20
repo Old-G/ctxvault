@@ -8,7 +8,7 @@ export const syncCommand = new Command('sync')
   .action(() => {
     const projectRoot = process.cwd();
     const ctxDir = join(projectRoot, '.ctx');
-    const dbPath = join(ctxDir, 'index.db');
+    const dbPath = join(ctxDir, 'vault.db');
     const { sqlite } = createDatabase(dbPath);
     const store = new MemoryStore(ctxDir);
 

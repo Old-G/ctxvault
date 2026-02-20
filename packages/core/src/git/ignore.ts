@@ -3,9 +3,10 @@ import { join } from 'node:path';
 
 const CTX_IGNORE_ENTRIES = [
   '# CtxVault',
-  '.ctx/index.db',
-  '.ctx/index.db-wal',
-  '.ctx/index.db-shm',
+  '.ctx/vault.db',
+  '.ctx/vault.db-wal',
+  '.ctx/vault.db-shm',
+  '.ctx/sessions/',
 ];
 
 export function ensureGitignore(projectRoot: string): void {

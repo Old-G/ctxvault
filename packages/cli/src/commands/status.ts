@@ -44,7 +44,7 @@ export const statusCommand = new Command('status')
     }
 
     // Index status
-    const dbExists = existsSync(join(ctxDir, 'index.db'));
+    const dbExists = existsSync(join(ctxDir, 'vault.db'));
     console.log('');
     console.log(
       `  Index: ${dbExists ? chalk.green('exists') : chalk.yellow('not built (run ctx sync)')}`,
