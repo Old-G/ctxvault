@@ -182,7 +182,7 @@
 - [x] `extractFromTranscriptAsync` — async с deep+lightweight merge
 - [x] Тесты: decay (5), defrag (3) — итого 40 тестов
 - [x] ~~FTS5 дедупликация в extraction~~ (перенесено в Phase 1)
-- [ ] Import history из Claude Code / Codex
+- [x] Import history из Claude Code / Codex (`ctx import --agent claude-code`, JSONL парсер, FTS5 dedup)
 
 ### 2.2 Claude Code Plugin ✅
 
@@ -201,7 +201,7 @@
 ### 2.3 Distribution
 
 - [ ] Публикация на skills.sh
-- [ ] Skill-only fallback mode (без CLI, через grep/find/cat)
+- [x] Skill-only fallback mode (без CLI, через grep/find/cat) — все 5 scripts с auto-detect
 
 ---
 
