@@ -1,0 +1,31 @@
+{
+  "name": "ctxvault",
+  "version": "0.0.0",
+  "type": "module",
+  "bin": {
+    "ctx": "./bin/ctx.js",
+    "ctxvault": "./bin/ctx.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "bin"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist *.tsbuildinfo"
+  },
+  "dependencies": {
+    "@ctxvault/core": "workspace:*"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}
