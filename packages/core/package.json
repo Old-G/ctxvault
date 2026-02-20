@@ -19,5 +19,17 @@
   },
   "engines": {
     "node": ">=22"
+  },
+  "dependencies": {
+    "better-sqlite3": "^12.6.2",
+    "drizzle-orm": "^0.45.1",
+    "gray-matter": "^4.0.3",
+    "js-tiktoken": "^1.0.21",
+    "simple-git": "^3.31.1",
+    "yaml": "^2.8.2",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13"
   }
 }
