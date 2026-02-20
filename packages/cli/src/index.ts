@@ -18,6 +18,7 @@ import { deprecateCommand } from './commands/deprecate.js';
 import { editCommand } from './commands/edit.js';
 import { reflectCommand } from './commands/reflect.js';
 import { defragCommand } from './commands/defrag.js';
+import { importCommand } from './commands/import.js';
 
 const program = new Command();
 
@@ -52,6 +53,9 @@ program.addCommand(syncCommand);
 program.addCommand(decayCommand);
 program.addCommand(reflectCommand);
 program.addCommand(defragCommand);
+
+// Import
+program.addCommand(importCommand);
 
 // Hooks
 program.addCommand(hookCommand);

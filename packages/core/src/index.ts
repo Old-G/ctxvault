@@ -51,6 +51,15 @@ export { applyDecay, boostRelevance, type DecayResult } from './intelligence/dec
 export { reflectOnSessions, type ReflectResult } from './intelligence/reflect.js';
 export { defragMemories, type DefragResult } from './intelligence/defrag.js';
 
+// Import
+export {
+  parseClaudeCodeTranscript,
+  discoverClaudeCodeTranscripts,
+  buildTranscriptText,
+  type TranscriptMessage,
+  type TranscriptSession,
+} from './import/transcript-parser.js';
+
 // Sync
 export { syncMemoryToIndex, removeFromIndex, rebuildIndex } from './index/sync.js';
 
