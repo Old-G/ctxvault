@@ -171,28 +171,30 @@
 
 ## Phase 2: Intelligence + Plugin + Distribution
 
-### 2.1 Intelligence
+### 2.1 Intelligence ✅
 
-- [ ] `ctx reflect --deep` — AI-рефлексия через Haiku
-- [ ] `ctx defrag` — реорганизация памяти (dedup, split, archive)
-- [ ] `ctx decay` — relevance decay
-- [ ] Deep extract mode (LLM-анализ сессий)
-- [ ] Import history из Claude Code / Codex
-- [ ] `ctx deprecate <path>`
-- [ ] `ctx edit <path>` (открыть в $EDITOR)
+- [x] `ctx decay [--dry-run]` — exponential relevance decay (applyDecay, boostRelevance)
+- [x] `ctx defrag [--dry-run]` — FTS5 дупликаты + merge + archive stale
+- [x] `ctx reflect [--dry-run]` — анализ session snapshots → новые memories
+- [x] Deep extract mode (LLM через Haiku, optional @anthropic-ai/sdk)
+- [x] `ctx deprecate <path>` — снижение relevance на 0.3
+- [x] `ctx edit <path>` — открыть в $EDITOR, re-sync index
+- [x] `extractFromTranscriptAsync` — async с deep+lightweight merge
+- [x] Тесты: decay (5), defrag (3) — итого 40 тестов
 - [x] ~~FTS5 дедупликация в extraction~~ (перенесено в Phase 1)
+- [ ] Import history из Claude Code / Codex
 
-### 2.2 Claude Code Plugin
+### 2.2 Claude Code Plugin ✅
 
-- [ ] `.claude-plugin/plugin.json` — манифест
-- [ ] `commands/search.md` — `/ctxvault:search <query>`
-- [ ] `commands/status.md` — `/ctxvault:status`
-- [ ] `commands/reflect.md` — `/ctxvault:reflect`
-- [ ] `commands/add.md` — `/ctxvault:add <type>`
-- [ ] `commands/inject.md` — `/ctxvault:inject`
-- [ ] `agents/memory-extractor.md` — субагент для рефлексии
-- [ ] `hooks/hooks.json` — бандл hooks
-- [ ] Skill внутри плагина
+- [x] `packages/plugin/.claude-plugin/plugin.json` — манифест
+- [x] `commands/search.md` — `/ctxvault:search <query>`
+- [x] `commands/status.md` — `/ctxvault:status`
+- [x] `commands/reflect.md` — `/ctxvault:reflect`
+- [x] `commands/add.md` — `/ctxvault:add <type>`
+- [x] `commands/inject.md` — `/ctxvault:inject`
+- [x] `agents/memory-extractor.md` — субагент для рефлексии
+- [x] `hooks/hooks.json` — бандл hooks + scripts/
+- [x] Skill внутри плагина (skills/ctxvault/)
 - [ ] Marketplace: `ctxvault/ctxvault-marketplace`
 - [ ] Подача в `anthropics/claude-plugins-official`
 
@@ -224,7 +226,7 @@
 - [x] FTS5 search работает с BM25 ranking
 - [x] PreToolUse < 10ms (~0.05ms), SessionStart < 200ms (~2.4ms)
 - [x] Auto-extract (lightweight) работает
-- [x] 32 теста проходят
+- [x] 40 тестов проходят (Phase 1: 32, Phase 2: +8)
 - [x] Coverage ≥ 70% (core: 77% stmts, 80% lines)
 - [ ] CI зелёный на всех платформах
 - [ ] README с GIF-демо
